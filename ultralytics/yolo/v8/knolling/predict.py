@@ -51,17 +51,17 @@ def predict(cfg=DEFAULT_CFG, use_python=False):
 
 
 if __name__ == '__main__':
-    predict()
-    # from ultralytics import YOLO
+    # predict()
+    from ultralytics import YOLO
 
-    # # Load a model
-    # model = YOLO('yolov8n-knolling.yaml')  # build from YAML and transfer weights
-    # model_pth = "/Users/yuhang/runs/pose/train3/weights/"
-    # model.load(model_pth+'last.pt')
-    #
-    # source_pth = '/Users/yuhang/datasets/knolling_data/images/val'
-    # # model = YOLO('yolov8n-pose.yaml')
-    # # source_pth = '0'
-    #
-    # result = model(source=source_pth,show= True,conf = 0.2,save=True)
-    # print(result)
+    # Load a model
+    model = YOLO('yolov8n-knolling.yaml')  # build from YAML and transfer weights
+    model_pth = "/Users/yuhang/runs/pose/train3/weights/"
+    model.load(model_pth+'last.pt')
+
+    source_pth = '/Users/yuhang/datasets/knolling_data/images/val'
+    # model = YOLO('yolov8n-pose.yaml')
+    # source_pth = '0'
+
+    result = model(source=source_pth,show= True,conf = 0.2,save=True)
+    print(result)
