@@ -35,11 +35,13 @@ class PosePredictor(DetectionPredictor):
 
 
 def predict(cfg=DEFAULT_CFG, use_python=False):
-    model = cfg.model or 'yolov8n-pose.pt'
-    source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
-        else 'https://ultralytics.com/images/bus.jpg'
-
+    # model = cfg.model or 'yolov8n-pose.pt'
+    model = "/Users/yuhang/runs/pose/train3/weights/best.pt"
+    # source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
+    #     else 'https://ultralytics.com/images/bus.jpg'
+    source = '/Users/yuhang/datasets/knolling_data/images/train'
     args = dict(model=model, source=source)
+    use_python = True
     if use_python:
         from ultralytics import YOLO
         YOLO(model)(**args)
@@ -50,3 +52,16 @@ def predict(cfg=DEFAULT_CFG, use_python=False):
 
 if __name__ == '__main__':
     predict()
+    # from ultralytics import YOLO
+
+    # # Load a model
+    # model = YOLO('yolov8n-knolling.yaml')  # build from YAML and transfer weights
+    # model_pth = "/Users/yuhang/runs/pose/train3/weights/"
+    # model.load(model_pth+'last.pt')
+    #
+    # source_pth = '/Users/yuhang/datasets/knolling_data/images/val'
+    # # model = YOLO('yolov8n-pose.yaml')
+    # # source_pth = '0'
+    #
+    # result = model(source=source_pth,show= True,conf = 0.2,save=True)
+    # print(result)

@@ -167,4 +167,12 @@ def train(cfg=DEFAULT_CFG, use_python=False):
 
 
 if __name__ == '__main__':
-    train()
+    # train()
+    from ultralytics import YOLO
+
+    # Load a model
+    model = YOLO('yolov8n-pose.yaml')  # build from YAML and transfer weights
+    model = model.load('yolov8n-pose.pt')
+    # Train the model
+    model.train(data='coco8-pose.yaml', epochs=10, imgsz=640)
+
