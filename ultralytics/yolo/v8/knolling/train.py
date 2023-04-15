@@ -180,5 +180,5 @@ if __name__ == '__main__':
     model = YOLO('yolov8n-knolling.yaml')  # build from YAML and transfer weights
     model = model.load('yolov8n-pose.pt')
     # Train the model
-    model.train(data='knolling.yaml', epochs=10, imgsz=640)
+    model.train(data='knolling.yaml', epochs=1000, imgsz=640)
 
