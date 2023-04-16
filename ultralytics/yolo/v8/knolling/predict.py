@@ -40,11 +40,12 @@ def predict(cfg=DEFAULT_CFG, use_python=False):
     # source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
     #     else 'https://ultralytics.com/images/bus.jpg'
     source_pth = '/home/ubuntu/Desktop/datasets/knolling_data/images/val'
-    args = dict(model=model, source=source_pth,save=True)
+    args = dict(model=model, source=source_pth, save=True, save_txt=True)
     use_python = True
     if use_python:
         from ultralytics import YOLO
-        YOLO(model)(**args)
+        zzz = YOLO(model)(**args)
+        print(zzz)
     else:
         predictor = PosePredictor(overrides=args)
         predictor.predict_cli()
