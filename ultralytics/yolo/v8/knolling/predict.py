@@ -69,7 +69,7 @@ def predict(cfg=DEFAULT_CFG, use_python=False):
         target = target[target_order]
 
         loss_mean = np.mean((target - pred) ** 2)
-        loss_std = np.mean((target - pred), dtype=np.float64)
+        loss_std = np.std((target - pred), dtype=np.float64)
         print('this is pred\n', pred)
         print('this is target\n',target)
         print('this is mean error', loss_mean)
