@@ -70,41 +70,127 @@ class Annotator:
         self.limb_color = colors.pose_palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
         self.kpt_color = colors.pose_palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
 
-    def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
+    # def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
+    #     # Add one xyxy box to image with label
+    #     if isinstance(box, torch.Tensor):
+    #         box = box.tolist()
+    #     if self.pil or not is_ascii(label):
+    #         self.draw.rectangle(box, width=self.lw, outline=color)  # box
+    #         if label:
+    #             if self.pil_9_2_0_check:
+    #                 _, _, w, h = self.font.getbbox(label)  # text width, height (New)
+    #             else:
+    #                 w, h = self.font.getsize(label)  # text width, height (Old, deprecated in 9.2.0)
+    #             outside = box[1] - h >= 0  # label fits outside box
+    #             self.draw.rectangle(
+    #                 (box[0], box[1] - h if outside else box[1], box[0] + w + 1,
+    #                  box[1] + 1 if outside else box[1] + h + 1),
+    #                 fill=color,
+    #             )
+    #             # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
+    #             self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
+    #     else:  # cv2
+    #         p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+    #         cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
+    #         if label:
+    #             tf = max(self.lw - 1, 1)  # font thickness
+    #             w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
+    #             outside = p1[1] - h >= 3
+    #             p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
+    #             cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
+    #             cv2.putText(self.im,
+    #                         label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
+    #                         0,
+    #                         self.lw / 3,
+    #                         txt_color,
+    #                         thickness=tf,
+    #                         lineType=cv2.LINE_AA)
+
+    def box_label(self, box, label='', color=(0, 0, 0), txt_color=(255, 255, 255), index=None, origin_size=None, scaled_xylw=None, keypoints=None):
         # Add one xyxy box to image with label
+
+        ############### zzz plot parameters ###############
+        zzz_lw = 1
+        color = (0, 0, 0)
+        tf = 1 # font thickness
+        if scaled_xylw[2] / scaled_xylw[3]:
+            pass
+        # center = np.array([(int(box[0]) + int(box[2])) / 2, (int(box[1]) + int(box[3])) / 2])
+        # print(center)
+        mm2px = 530 / 0.34
+        x_mm_center = scaled_xylw[1] * 0.3
+        y_mm_center = scaled_xylw[0] * 0.4 - 0.2
+        x_px_center = x_mm_center * mm2px + 6
+        y_px_center = y_mm_center * mm2px + 320
+        l = scaled_xylw[2]
+        w = scaled_xylw[3]
+        l = l.cpu().detach().numpy()
+        w = w.cpu().detach().numpy()
+
+        origin_size = origin_size.cpu().detach().numpy()
+        keypoints = keypoints.cpu().detach().numpy()
+        cos_sin = (keypoints / origin_size).reshape(-1, )
+
+        # classify the lw and ori!
+        if 0.75 <= l / w < 1.25:
+            print('this is 2x2')
+            my_ori = np.arctan2(cos_sin[1], cos_sin[0]) / 4
+        elif 1.25 <= l / w < 1.75:
+            print('this is 2x3')
+            my_ori = np.arctan2(cos_sin[1], cos_sin[0]) / 2
+        elif 1.75 <= l / w < 2.25:
+            print('this is 2x4')
+            my_ori = np.arctan2(cos_sin[1], cos_sin[0]) / 2
+        else:
+            print(l / w)
+
+        c1 = np.array([l / (3 * 2), w / (3 * 2)])
+        c2 = np.array([l / (3 * 2), -w / (3 * 2)])
+        c3 = np.array([-l / (3 * 2), w / (3 * 2)])
+        c4 = np.array([-l / (3 * 2), -w / (3 * 2)])
+
+        rot_z = [[np.cos(my_ori), -np.sin(my_ori)],
+                 [np.sin(my_ori), np.cos(my_ori)]]
+        corn1 = (np.dot(rot_z, c1)) * mm2px
+        corn2 = (np.dot(rot_z, c2)) * mm2px
+        corn3 = (np.dot(rot_z, c3)) * mm2px
+        corn4 = (np.dot(rot_z, c4)) * mm2px
+
+        corn1 = [corn1[0] + x_px_center, corn1[1] + y_px_center]
+        corn2 = [corn2[0] + x_px_center, corn2[1] + y_px_center]
+        corn3 = [corn3[0] + x_px_center, corn3[1] + y_px_center]
+        corn4 = [corn4[0] + x_px_center, corn4[1] + y_px_center]
+
+
+        ############### zzz plot parameters ###############
+
         if isinstance(box, torch.Tensor):
-            box = box.tolist()
-        if self.pil or not is_ascii(label):
-            self.draw.rectangle(box, width=self.lw, outline=color)  # box
-            if label:
-                if self.pil_9_2_0_check:
-                    _, _, w, h = self.font.getbbox(label)  # text width, height (New)
-                else:
-                    w, h = self.font.getsize(label)  # text width, height (Old, deprecated in 9.2.0)
-                outside = box[1] - h >= 0  # label fits outside box
-                self.draw.rectangle(
-                    (box[0], box[1] - h if outside else box[1], box[0] + w + 1,
-                     box[1] + 1 if outside else box[1] + h + 1),
-                    fill=color,
-                )
-                # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
-                self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
-        else:  # cv2
-            p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
-            cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
-            if label:
-                tf = max(self.lw - 1, 1)  # font thickness
-                w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
-                outside = p1[1] - h >= 3
-                p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
-                cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
-                cv2.putText(self.im,
-                            label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
-                            0,
-                            self.lw / 3,
-                            txt_color,
-                            thickness=tf,
-                            lineType=cv2.LINE_AA)
+            box = box.cpu().detach().numpy()
+        # print(box)
+
+
+        p1 = np.array([int(box[0]), int(box[1])])
+        p2 = np.array([int(box[2]), int(box[3])])
+        # print('this is p1 and p2', p1, p2)
+
+        # print('this is label', label)
+        # cv2.rectangle(self.im, p1, p2, color, thickness=zzz_lw, lineType=cv2.LINE_AA)
+        cv2.line(self.im, (int(corn1[1]), int(corn1[0])), (int(corn2[1]), int(corn2[0])), (255, 0, 0), 1)
+        cv2.line(self.im, (int(corn2[1]), int(corn2[0])), (int(corn4[1]), int(corn4[0])), (255, 0, 0), 1)
+        cv2.line(self.im, (int(corn4[1]), int(corn4[0])), (int(corn3[1]), int(corn3[0])), (255, 0, 0), 1)
+        cv2.line(self.im, (int(corn3[1]), int(corn3[0])), (int(corn1[1]), int(corn1[0])), (255, 0, 0), 1)
+        if label:
+            w, h = cv2.getTextSize(label, 0, fontScale=zzz_lw / 3, thickness=tf)[0]  # text width, height
+            outside = p1[1] - h >= 3
+            p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
+            # cv2.rectangle(self.im, p1, p2, color, 0, cv2.LINE_AA)  # filled
+            cv2.putText(self.im,
+                        str(index), (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
+                        0,
+                        zzz_lw / 3,
+                        txt_color,
+                        thickness=tf,
+                        lineType=cv2.LINE_AA)
 
     def masks(self, masks, colors, im_gpu, alpha=0.5, retina_masks=False):
         """Plot masks at once.

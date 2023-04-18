@@ -134,10 +134,16 @@ class BasePredictor:
         # write
         if self.args.save_txt:
             result.save_txt(f'{self.txt_path}.txt', save_conf=self.args.save_conf)
+            # ################ zzz ################
+            # zzz_result = result.save_txt(f'{self.txt_path}.txt', save_conf=self.args.save_conf)
+            # ################ zzz ################
         if self.args.save_crop:
             result.save_crop(save_dir=self.save_dir / 'crops', file_name=self.data_path.stem)
 
         return log_string
+        # ################ zzz ################
+        # return log_string, zzz_result
+        # ################ zzz ################
 
     def postprocess(self, preds, img, orig_img):
         return preds
@@ -230,7 +236,13 @@ class BasePredictor:
                 p = Path(p)
 
                 if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
+
                     s += self.write_results(i, self.results, (p, im, im0))
+
+                    # ################ zzz ################
+                    # string, zzz_yolo_result = self.write_results(i, self.results, (p, im, im0))
+                    # s += string
+                    # ################ zzz ################
 
                 if self.args.show and self.plotted_img is not None:
                     self.show(p)
@@ -259,6 +271,10 @@ class BasePredictor:
             LOGGER.info(f"Results saved to {colorstr('bold', self.save_dir)}{s}")
 
         self.run_callbacks('on_predict_end')
+        # ################ zzz ################
+        # self.run_callbacks('on_predict_end')
+        # return zzz_yolo_result
+        # ################ zzz ################
 
     def setup_model(self, model, verbose=True):
         device = select_device(self.args.device, verbose=verbose)
