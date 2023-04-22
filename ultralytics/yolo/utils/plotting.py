@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, GPL-3.0 license
+# Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import contextlib
 import math
@@ -21,7 +21,7 @@ from .ops import clip_boxes, scale_image, xywh2xyxy, xyxy2xywh
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
     def __init__(self):
-        # hex = matplotlib.colors.TABLEAU_COLORS.values()
+        """Initialize colors as hex = matplotlib.colors.TABLEAU_COLORS.values()."""
         hexs = ('FF3838', 'FF9D97', 'FF701F', 'FFB21D', 'CFD231', '48F90A', '92CC17', '3DDB86', '1A9334', '00D4BB',
                 '2C99A8', '00C2FF', '344593', '6473FF', '0018EC', '8438FF', '520085', 'CB38FF', 'FF95C8', 'FF37C7')
         self.palette = [self.hex2rgb(f'#{c}') for c in hexs]
@@ -33,6 +33,7 @@ class Colors:
                                      dtype=np.uint8)
 
     def __call__(self, i, bgr=False):
+        """Converts hex color codes to rgb values."""
         c = self.palette[int(i) % self.n]
         return (c[2], c[1], c[0]) if bgr else c
 
@@ -47,6 +48,7 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 class Annotator:
     # YOLOv8 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
+        """Initialize the Annotator class with image and line width along with color palette for keypoints and limbs."""
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
         non_ascii = not is_ascii(example)  # non-latin labels, i.e. asian, arabic, cyrillic
         self.pil = pil or non_ascii
@@ -63,134 +65,48 @@ class Annotator:
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
-        # pose
+        # Pose
         self.skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8], [7, 9],
                          [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 
         self.limb_color = colors.pose_palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
         self.kpt_color = colors.pose_palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
 
-    # def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
-    #     # Add one xyxy box to image with label
-    #     if isinstance(box, torch.Tensor):
-    #         box = box.tolist()
-    #     if self.pil or not is_ascii(label):
-    #         self.draw.rectangle(box, width=self.lw, outline=color)  # box
-    #         if label:
-    #             if self.pil_9_2_0_check:
-    #                 _, _, w, h = self.font.getbbox(label)  # text width, height (New)
-    #             else:
-    #                 w, h = self.font.getsize(label)  # text width, height (Old, deprecated in 9.2.0)
-    #             outside = box[1] - h >= 0  # label fits outside box
-    #             self.draw.rectangle(
-    #                 (box[0], box[1] - h if outside else box[1], box[0] + w + 1,
-    #                  box[1] + 1 if outside else box[1] + h + 1),
-    #                 fill=color,
-    #             )
-    #             # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
-    #             self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
-    #     else:  # cv2
-    #         p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
-    #         cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
-    #         if label:
-    #             tf = max(self.lw - 1, 1)  # font thickness
-    #             w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
-    #             outside = p1[1] - h >= 3
-    #             p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
-    #             cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
-    #             cv2.putText(self.im,
-    #                         label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
-    #                         0,
-    #                         self.lw / 3,
-    #                         txt_color,
-    #                         thickness=tf,
-    #                         lineType=cv2.LINE_AA)
-
-    def box_label(self, box, label='', color=(0, 0, 0), txt_color=(255, 255, 255), index=None, origin_size=None, scaled_xylw=None, keypoints=None):
-        # Add one xyxy box to image with label
-
-        ############### zzz plot parameters ###############
-        zzz_lw = 1
-        color = (0, 0, 0)
-        tf = 1 # font thickness
-        if scaled_xylw[2] / scaled_xylw[3]:
-            pass
-        # center = np.array([(int(box[0]) + int(box[2])) / 2, (int(box[1]) + int(box[3])) / 2])
-        # print(center)
-        mm2px = 530 / 0.34
-        x_mm_center = scaled_xylw[1] * 0.3
-        y_mm_center = scaled_xylw[0] * 0.4 - 0.2
-        x_px_center = x_mm_center * mm2px + 6
-        y_px_center = y_mm_center * mm2px + 320
-        l = scaled_xylw[2]
-        w = scaled_xylw[3]
-        l = l.cpu().detach().numpy()
-        w = w.cpu().detach().numpy()
-
-        origin_size = origin_size.cpu().detach().numpy()
-        keypoints = keypoints.cpu().detach().numpy()
-        cos_sin = (keypoints / origin_size).reshape(-1, )
-
-        # classify the lw and ori!
-        if 0.75 <= l / w < 1.25:
-            print('this is 2x2')
-            my_ori = np.arctan2(cos_sin[1], cos_sin[0]) / 4
-        elif 1.25 <= l / w < 1.75:
-            print('this is 2x3')
-            my_ori = np.arctan2(cos_sin[1], cos_sin[0]) / 2
-        elif 1.75 <= l / w < 2.25:
-            print('this is 2x4')
-            my_ori = np.arctan2(cos_sin[1], cos_sin[0]) / 2
-        else:
-            print(l / w)
-
-        c1 = np.array([l / (3 * 2), w / (3 * 2)])
-        c2 = np.array([l / (3 * 2), -w / (3 * 2)])
-        c3 = np.array([-l / (3 * 2), w / (3 * 2)])
-        c4 = np.array([-l / (3 * 2), -w / (3 * 2)])
-
-        rot_z = [[np.cos(my_ori), -np.sin(my_ori)],
-                 [np.sin(my_ori), np.cos(my_ori)]]
-        corn1 = (np.dot(rot_z, c1)) * mm2px
-        corn2 = (np.dot(rot_z, c2)) * mm2px
-        corn3 = (np.dot(rot_z, c3)) * mm2px
-        corn4 = (np.dot(rot_z, c4)) * mm2px
-
-        corn1 = [corn1[0] + x_px_center, corn1[1] + y_px_center]
-        corn2 = [corn2[0] + x_px_center, corn2[1] + y_px_center]
-        corn3 = [corn3[0] + x_px_center, corn3[1] + y_px_center]
-        corn4 = [corn4[0] + x_px_center, corn4[1] + y_px_center]
-
-
-        ############### zzz plot parameters ###############
-
+    def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
+        """Add one xyxy box to image with label."""
         if isinstance(box, torch.Tensor):
-            box = box.cpu().detach().numpy()
-        # print(box)
-
-
-        p1 = np.array([int(box[0]), int(box[1])])
-        p2 = np.array([int(box[2]), int(box[3])])
-        # print('this is p1 and p2', p1, p2)
-
-        # print('this is label', label)
-        # cv2.rectangle(self.im, p1, p2, color, thickness=zzz_lw, lineType=cv2.LINE_AA)
-        cv2.line(self.im, (int(corn1[1]), int(corn1[0])), (int(corn2[1]), int(corn2[0])), (255, 0, 0), 1)
-        cv2.line(self.im, (int(corn2[1]), int(corn2[0])), (int(corn4[1]), int(corn4[0])), (255, 0, 0), 1)
-        cv2.line(self.im, (int(corn4[1]), int(corn4[0])), (int(corn3[1]), int(corn3[0])), (255, 0, 0), 1)
-        cv2.line(self.im, (int(corn3[1]), int(corn3[0])), (int(corn1[1]), int(corn1[0])), (255, 0, 0), 1)
-        if label:
-            w, h = cv2.getTextSize(label, 0, fontScale=zzz_lw / 3, thickness=tf)[0]  # text width, height
-            outside = p1[1] - h >= 3
-            p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
-            # cv2.rectangle(self.im, p1, p2, color, 0, cv2.LINE_AA)  # filled
-            cv2.putText(self.im,
-                        str(index), (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
-                        0,
-                        zzz_lw / 3,
-                        txt_color,
-                        thickness=tf,
-                        lineType=cv2.LINE_AA)
+            box = box.tolist()
+        if self.pil or not is_ascii(label):
+            self.draw.rectangle(box, width=self.lw, outline=color)  # box
+            if label:
+                if self.pil_9_2_0_check:
+                    _, _, w, h = self.font.getbbox(label)  # text width, height (New)
+                else:
+                    w, h = self.font.getsize(label)  # text width, height (Old, deprecated in 9.2.0)
+                outside = box[1] - h >= 0  # label fits outside box
+                self.draw.rectangle(
+                    (box[0], box[1] - h if outside else box[1], box[0] + w + 1,
+                     box[1] + 1 if outside else box[1] + h + 1),
+                    fill=color,
+                )
+                # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
+                self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
+        else:  # cv2
+            p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+            cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
+            if label:
+                tf = max(self.lw - 1, 1)  # font thickness
+                w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
+                outside = p1[1] - h >= 3
+                p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
+                cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
+                cv2.putText(self.im,
+                            label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
+                            0,
+                            self.lw / 3,
+                            txt_color,
+                            thickness=tf,
+                            lineType=cv2.LINE_AA)
 
     def masks(self, masks, colors, im_gpu, alpha=0.5, retina_masks=False):
         """Plot masks at once.
@@ -201,7 +117,7 @@ class Annotator:
             alpha (float): mask transparency: 0.0 fully transparent, 1.0 opaque
         """
         if self.pil:
-            # convert to numpy first
+            # Convert to numpy first
             self.im = np.asarray(self.im).copy()
         if len(masks) == 0:
             self.im[:] = im_gpu.permute(1, 2, 0).contiguous().cpu().numpy() * 255
@@ -213,7 +129,7 @@ class Annotator:
         masks_color = masks * (colors * alpha)  # shape(n,h,w,3)
 
         inv_alph_masks = (1 - masks * alpha).cumprod(0)  # shape(n,h,w,1)
-        mcs = (masks_color * inv_alph_masks).sum(0) * 2  # mask color summand shape(n,h,w,3)
+        mcs = masks_color.max(dim=0).values  # shape(n,h,w,3)
 
         im_gpu = im_gpu.flip(dims=[0])  # flip channel
         im_gpu = im_gpu.permute(1, 2, 0).contiguous()  # shape(h,w,3)
@@ -222,19 +138,23 @@ class Annotator:
         im_mask_np = im_mask.byte().cpu().numpy()
         self.im[:] = im_mask_np if retina_masks else scale_image(im_mask_np, self.im.shape)
         if self.pil:
-            # convert im back to PIL and update draw
+            # Convert im back to PIL and update draw
             self.fromarray(self.im)
 
-    def kpts(self, kpts, shape=(640, 640), radius=5, kpt_line=True):
-        """Plot keypoints.
+    def kpts(self, kpts, shape=(640, 640), radius=1, kpt_line=True):
+        """Plot keypoints on the image.
+
         Args:
-            kpts (tensor): predicted kpts, shape: [17, 3]
-            shape (tuple): image shape, (h, w)
-            steps (int): keypoints step
-            radius (int): size of drawing points
+            kpts (tensor): Predicted keypoints with shape [17, 3]. Each keypoint has (x, y, confidence).
+            shape (tuple): Image shape as a tuple (h, w), where h is the height and w is the width.
+            radius (int, optional): Radius of the drawn keypoints. Default is 5.
+            kpt_line (bool, optional): If True, the function will draw lines connecting keypoints
+                                       for human pose. Default is True.
+
+        Note: `kpt_line=True` currently only supports human pose plotting.
         """
         if self.pil:
-            # convert to numpy first
+            # Convert to numpy first
             self.im = np.asarray(self.im).copy()
         nkpt, ndim = kpts.shape
         is_pose = nkpt == 17 and ndim == 3
@@ -265,15 +185,15 @@ class Annotator:
                     continue
                 cv2.line(self.im, pos1, pos2, [int(x) for x in self.limb_color[i]], thickness=2, lineType=cv2.LINE_AA)
         if self.pil:
-            # convert im back to PIL and update draw
+            # Convert im back to PIL and update draw
             self.fromarray(self.im)
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
-        # Add rectangle to image (PIL-only)
+        """Add rectangle to image (PIL-only)."""
         self.draw.rectangle(xy, fill, outline, width)
 
     def text(self, xy, text, txt_color=(255, 255, 255), anchor='top'):
-        # Add text to image (PIL-only)
+        """Adds text to an image using PIL or cv2."""
         if anchor == 'bottom':  # start y from font bottom
             w, h = self.font.getsize(text)  # text width, height
             xy[1] += 1 - h
@@ -284,33 +204,34 @@ class Annotator:
             cv2.putText(self.im, text, xy, 0, self.lw / 3, txt_color, thickness=tf, lineType=cv2.LINE_AA)
 
     def fromarray(self, im):
-        # Update self.im from a numpy array
+        """Update self.im from a numpy array."""
         self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
         self.draw = ImageDraw.Draw(self.im)
 
     def result(self):
-        # Return annotated image as array
+        """Return annotated image as array."""
         return np.asarray(self.im)
 
 
 @TryExcept()  # known issue https://github.com/ultralytics/yolov5/issues/5395
 @plt_settings()
 def plot_labels(boxes, cls, names=(), save_dir=Path('')):
+    """Save and plot image with no axis or spines."""
     import pandas as pd
     import seaborn as sn
 
-    # plot dataset labels
+    # Plot dataset labels
     LOGGER.info(f"Plotting labels to {save_dir / 'labels.jpg'}... ")
     b = boxes.transpose()  # classes, boxes
     nc = int(cls.max() + 1)  # number of classes
     x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
 
-    # seaborn correlogram
+    # Seaborn correlogram
     sn.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
     plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
     plt.close()
 
-    # matplotlib labels
+    # Matplotlib labels
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     y = ax[0].hist(cls, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     with contextlib.suppress(Exception):  # color histogram bars by class
@@ -324,7 +245,7 @@ def plot_labels(boxes, cls, names=(), save_dir=Path('')):
     sn.histplot(x, x='x', y='y', ax=ax[2], bins=50, pmax=0.9)
     sn.histplot(x, x='width', y='height', ax=ax[3], bins=50, pmax=0.9)
 
-    # rectangles
+    # Rectangles
     boxes[:, 0:2] = 0.5  # center
     boxes = xywh2xyxy(boxes) * 1000
     img = Image.fromarray(np.ones((1000, 1000, 3), dtype=np.uint8) * 255)
@@ -342,7 +263,7 @@ def plot_labels(boxes, cls, names=(), save_dir=Path('')):
 
 
 def save_one_box(xyxy, im, file=Path('im.jpg'), gain=1.02, pad=10, square=False, BGR=False, save=True):
-    # Save image crop as {file} with crop size multiple {gain} and {pad} pixels. Save and/or return crop
+    """Save image crop as {file} with crop size multiple {gain} and {pad} pixels. Save and/or return crop."""
     b = xyxy2xywh(xyxy.view(-1, 4))  # boxes
     if square:
         b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
@@ -483,7 +404,7 @@ def plot_images(images,
 
 @plt_settings()
 def plot_results(file='path/to/results.csv', dir='', segment=False, pose=False):
-    # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
+    """Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')."""
     import pandas as pd
     save_dir = Path(file).parent if file else Path(dir)
     if segment:
@@ -518,7 +439,7 @@ def plot_results(file='path/to/results.csv', dir='', segment=False, pose=False):
 
 
 def output_to_target(output, max_det=300):
-    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf] for plotting
+    """Convert model output to target format [batch_id, class_id, x, y, w, h, conf] for plotting."""
     targets = []
     for i, o in enumerate(output):
         box, conf, cls = o[:max_det, :6].cpu().split((4, 1, 1), 1)

@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, GPL-3.0 license
+# Ultralytics YOLO 🚀, AGPL-3.0 license
 """
 Ultralytics Results, Boxes and Masks classes for handling inference results
 
@@ -19,42 +19,41 @@ from ultralytics.yolo.utils.plotting import Annotator, colors, save_one_box
 
 class BaseTensor(SimpleClass):
     """
-
-    Attributes:
-        data (torch.Tensor): Base tensor.
-        orig_shape (tuple): Original image size, in the format (height, width).
-
-    Methods:
-        cpu(): Returns a copy of the tensor on CPU memory.
-        numpy(): Returns a copy of the tensor as a numpy array.
-        cuda(): Returns a copy of the tensor on GPU memory.
-        to(): Returns a copy of the tensor with the specified device and dtype.
+    Base tensor class with additional methods for easy manipulation and device handling.
     """
 
     def __init__(self, data, orig_shape) -> None:
+        """Initialize BaseTensor with data and original shape."""
         self.data = data
         self.orig_shape = orig_shape
 
     @property
     def shape(self):
+        """Return the shape of the data tensor."""
         return self.data.shape
 
     def cpu(self):
+        """Return a copy of the tensor on CPU memory."""
         return self.__class__(self.data.cpu(), self.orig_shape)
 
     def numpy(self):
+        """Return a copy of the tensor as a numpy array."""
         return self.__class__(self.data.numpy(), self.orig_shape)
 
     def cuda(self):
+        """Return a copy of the tensor on GPU memory."""
         return self.__class__(self.data.cuda(), self.orig_shape)
 
     def to(self, *args, **kwargs):
+        """Return a copy of the tensor with the specified device and dtype."""
         return self.__class__(self.data.to(*args, **kwargs), self.orig_shape)
 
     def __len__(self):  # override len(results)
+        """Return the length of the data tensor."""
         return len(self.data)
 
     def __getitem__(self, idx):
+        """Return a BaseTensor with the specified index of the data tensor."""
         return self.__class__(self.data[idx], self.orig_shape)
 
 
@@ -83,10 +82,10 @@ class Results(SimpleClass):
         keypoints (List[List[float]], optional): A list of detected keypoints for each object.
         speed (dict): A dictionary of preprocess, inference and postprocess speeds in milliseconds per image.
         _keys (tuple): A tuple of attribute names for non-empty attributes.
-
     """
 
     def __init__(self, orig_img, path, names, boxes=None, masks=None, probs=None, keypoints=None) -> None:
+        """Initialize the Results class."""
         self.orig_img = orig_img
         self.orig_shape = orig_img.shape[:2]
         self.boxes = Boxes(boxes, self.orig_shape) if boxes is not None else None  # native size boxes
@@ -99,16 +98,19 @@ class Results(SimpleClass):
         self._keys = ('boxes', 'masks', 'probs', 'keypoints')
 
     def pandas(self):
+        """Convert the results to a pandas DataFrame."""
         pass
         # TODO masks.pandas + boxes.pandas + cls.pandas
 
     def __getitem__(self, idx):
+        """Return a Results object for the specified index."""
         r = self.new()
         for k in self.keys:
             setattr(r, k, getattr(self, k)[idx])
         return r
 
     def update(self, boxes=None, masks=None, probs=None):
+        """Update the boxes, masks, and probs attributes of the Results object."""
         if boxes is not None:
             self.boxes = Boxes(boxes, self.orig_shape)
         if masks is not None:
@@ -117,118 +119,46 @@ class Results(SimpleClass):
             self.probs = probs
 
     def cpu(self):
+        """Return a copy of the Results object with all tensors on CPU memory."""
         r = self.new()
         for k in self.keys:
             setattr(r, k, getattr(self, k).cpu())
         return r
 
     def numpy(self):
+        """Return a copy of the Results object with all tensors as numpy arrays."""
         r = self.new()
         for k in self.keys:
             setattr(r, k, getattr(self, k).numpy())
         return r
 
     def cuda(self):
+        """Return a copy of the Results object with all tensors on GPU memory."""
         r = self.new()
         for k in self.keys:
             setattr(r, k, getattr(self, k).cuda())
         return r
 
     def to(self, *args, **kwargs):
+        """Return a copy of the Results object with tensors on the specified device and dtype."""
         r = self.new()
         for k in self.keys:
             setattr(r, k, getattr(self, k).to(*args, **kwargs))
         return r
 
     def __len__(self):
+        """Return the number of detections in the Results object."""
         for k in self.keys:
             return len(getattr(self, k))
 
     def new(self):
+        """Return a new Results object with the same image, path, and names."""
         return Results(orig_img=self.orig_img, path=self.path, names=self.names)
 
     @property
     def keys(self):
+        """Return a list of non-empty attribute names."""
         return [k for k in self._keys if getattr(self, k) is not None]
-
-    # def plot(
-    #         self,
-    #         conf=True,
-    #         line_width=None,
-    #         font_size=None,
-    #         font='Arial.ttf',
-    #         pil=False,
-    #         img=None,
-    #         img_gpu=None,
-    #         kpt_line=True,
-    #         labels=True,
-    #         boxes=True,
-    #         masks=True,
-    #         probs=True,
-    #         **kwargs  # deprecated args TODO: remove support in 8.2
-    # ):
-    #     """
-    #     Plots the detection results on an input RGB image. Accepts a numpy array (cv2) or a PIL Image.
-    #
-    #     Args:
-    #         conf (bool): Whether to plot the detection confidence score.
-    #         line_width (float, optional): The line width of the bounding boxes. If None, it is scaled to the image size.
-    #         font_size (float, optional): The font size of the text. If None, it is scaled to the image size.
-    #         font (str): The font to use for the text.
-    #         pil (bool): Whether to return the image as a PIL Image.
-    #         img (numpy.ndarray): Plot to another image. if not, plot to original image.
-    #         img_gpu (torch.Tensor): Normalized image in gpu with shape (1, 3, 640, 640), for faster mask plotting.
-    #         kpt_line (bool): Whether to draw lines connecting keypoints.
-    #         labels (bool): Whether to plot the label of bounding boxes.
-    #         boxes (bool): Whether to plot the bounding boxes.
-    #         masks (bool): Whether to plot the masks.
-    #         probs (bool): Whether to plot classification probability
-    #
-    #     Returns:
-    #         (numpy.ndarray): A numpy array of the annotated image.
-    #     """
-    #     # Deprecation warn TODO: remove in 8.2
-    #     if 'show_conf' in kwargs:
-    #         deprecation_warn('show_conf', 'conf')
-    #         conf = kwargs['show_conf']
-    #         assert type(conf) == bool, '`show_conf` should be of boolean type, i.e, show_conf=True/False'
-    #
-    #     names = self.names
-    #     annotator = Annotator(deepcopy(self.orig_img if img is None else img),
-    #                           line_width,
-    #                           font_size,
-    #                           font,
-    #                           pil,
-    #                           example=names)
-    #     pred_boxes, show_boxes = self.boxes, boxes
-    #     pred_masks, show_masks = self.masks, masks
-    #     pred_probs, show_probs = self.probs, probs
-    #     keypoints = self.keypoints
-    #     if pred_masks and show_masks:
-    #         if img_gpu is None:
-    #             img = LetterBox(pred_masks.shape[1:])(image=annotator.result())
-    #             img_gpu = torch.as_tensor(img, dtype=torch.float16, device=pred_masks.data.device).permute(
-    #                 2, 0, 1).flip(0).contiguous() / 255
-    #         annotator.masks(pred_masks.data, colors=[colors(x, True) for x in pred_boxes.cls], im_gpu=img_gpu)
-    #
-    #     if pred_boxes and show_boxes:
-    #         for d in reversed(pred_boxes):
-    #             c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
-    #             name = ('' if id is None else f'id:{id} ') + names[c]
-    #             label = (f'{name} {conf:.2f}' if conf else name) if labels else None
-    #             annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True))
-    #
-    #     if pred_probs is not None and show_probs:
-    #         n5 = min(len(names), 5)
-    #         top5i = pred_probs.argsort(0, descending=True)[:n5].tolist()  # top 5 indices
-    #         text = f"{', '.join(f'{names[j] if names else j} {pred_probs[j]:.2f}' for j in top5i)}, "
-    #         annotator.text((32, 32), text, txt_color=(255, 255, 255))  # TODO: allow setting colors
-    #
-    #     if keypoints is not None:
-    #         for k in reversed(keypoints):
-    #             annotator.kpts(k, self.orig_shape, kpt_line=kpt_line)
-    #
-    #     return annotator.result()
 
     def plot(
             self,
@@ -283,34 +213,40 @@ class Results(SimpleClass):
         pred_masks, show_masks = self.masks, masks
         pred_probs, show_probs = self.probs, probs
         keypoints = self.keypoints
-
-        # if pred_masks and show_masks:
-        #     if img_gpu is None:
-        #         img = LetterBox(pred_masks.shape[1:])(image=annotator.result())
-        #         img_gpu = torch.as_tensor(img, dtype=torch.float16, device=pred_masks.data.device).permute(
-        #             2, 0, 1).flip(0).contiguous() / 255
-        #     annotator.masks(pred_masks.data, colors=[colors(x, True) for x in pred_boxes.cls], im_gpu=img_gpu)
+        if pred_masks and show_masks:
+            if img_gpu is None:
+                img = LetterBox(pred_masks.shape[1:])(image=annotator.result())
+                img_gpu = torch.as_tensor(img, dtype=torch.float16, device=pred_masks.data.device).permute(
+                    2, 0, 1).flip(0).contiguous() / 255
+            annotator.masks(pred_masks.data, colors=[colors(x, True) for x in pred_boxes.cls], im_gpu=img_gpu)
 
         if pred_boxes and show_boxes:
-            i = 0
-            for d in pred_boxes:
-                # print(d.xywhn.view(-1))
-                # print(reversed(pred_boxes).dtype())
+
+            # i = 0
+            # for d in pred_boxes:
+            #     # print(d.xywhn.view(-1))
+            #     # print(reversed(pred_boxes).dtype())
+            #     c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+            #     name = ('' if id is None else f'id:{id} ') + names[c]
+            #     label = (f'{name} {conf:.2f}' if conf else name) if labels else None
+            #     annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True), index=i, origin_size=d.orig_shape[[1, 0]], scaled_xylw=d.xywhn.view(-1), keypoints=keypoints[i])
+            #     i = i + 1
+
+            for d in reversed(pred_boxes):
                 c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
                 name = ('' if id is None else f'id:{id} ') + names[c]
                 label = (f'{name} {conf:.2f}' if conf else name) if labels else None
-                annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True), index=i, origin_size=d.orig_shape[[1, 0]], scaled_xylw=d.xywhn.view(-1), keypoints=keypoints[i])
-                i = i + 1
+                annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True))
 
-        # if pred_probs is not None and show_probs:
-        #     n5 = min(len(names), 5)
-        #     top5i = pred_probs.argsort(0, descending=True)[:n5].tolist()  # top 5 indices
-        #     text = f"{', '.join(f'{names[j] if names else j} {pred_probs[j]:.2f}' for j in top5i)}, "
-        #     annotator.text((32, 32), text, txt_color=(255, 255, 255))  # TODO: allow setting colors
+        if pred_probs is not None and show_probs:
+            n5 = min(len(names), 5)
+            top5i = pred_probs.argsort(0, descending=True)[:n5].tolist()  # top 5 indices
+            text = f"{', '.join(f'{names[j] if names else j} {pred_probs[j]:.2f}' for j in top5i)}, "
+            annotator.text((32, 32), text, txt_color=(255, 255, 255))  # TODO: allow setting colors
 
-        # if keypoints is not None:
-        #     for k in reversed(keypoints):
-        #         annotator.kpts(k, self.orig_shape, kpt_line=kpt_line)
+        if keypoints is not None:
+            for k in reversed(keypoints):
+                annotator.kpts(k, self.orig_shape, kpt_line=kpt_line)
 
         return annotator.result()
 
@@ -334,7 +270,8 @@ class Results(SimpleClass):
         return log_string
 
     def save_txt(self, txt_file, save_conf=False):
-        """Save predictions into txt file.
+        """
+        Save predictions into txt file.
 
         Args:
             txt_file (str): txt file path.
@@ -346,12 +283,12 @@ class Results(SimpleClass):
         kpts = self.keypoints
         texts = []
         if probs is not None:
-            # classify
+            # Classify
             n5 = min(len(self.names), 5)
             top5i = probs.argsort(0, descending=True)[:n5].tolist()  # top 5 indices
             [texts.append(f'{probs[j]:.2f} {self.names[j]}') for j in top5i]
         elif boxes:
-            # detect/segment/pose
+            # Detect/segment/pose
             for j, d in enumerate(boxes):
                 c, conf, id = int(d.cls), float(d.conf), None if d.id is None else int(d.id.item())
                 line = (c, *d.xywhn.view(-1))
@@ -364,12 +301,13 @@ class Results(SimpleClass):
                 line += (conf, ) * save_conf + (() if id is None else (id, ))
                 texts.append(('%g ' * len(line)).rstrip() % line)
 
-        with open(txt_file, 'a') as f:
-            for text in texts:
-                f.write(text + '\n')
+        if texts:
+            with open(txt_file, 'a') as f:
+                f.writelines(text + '\n' for text in texts)
 
     def save_crop(self, save_dir, file_name=Path('im.jpg')):
-        """Save cropped predictions to `save_dir/cls/file_name.jpg`.
+        """
+        Save cropped predictions to `save_dir/cls/file_name.jpg`.
 
         Args:
             save_dir (str | pathlib.Path): Save path.
@@ -422,6 +360,7 @@ class Boxes(BaseTensor):
     """
 
     def __init__(self, boxes, orig_shape) -> None:
+        """Initialize the Boxes class."""
         if boxes.ndim == 1:
             boxes = boxes[None, :]
         n = boxes.shape[-1]
@@ -433,40 +372,49 @@ class Boxes(BaseTensor):
 
     @property
     def xyxy(self):
+        """Return the boxes in xyxy format."""
         return self.data[:, :4]
 
     @property
     def conf(self):
+        """Return the confidence values of the boxes."""
         return self.data[:, -2]
 
     @property
     def cls(self):
+        """Return the class values of the boxes."""
         return self.data[:, -1]
 
     @property
     def id(self):
+        """Return the track IDs of the boxes (if available)."""
         return self.data[:, -3] if self.is_track else None
 
     @property
     @lru_cache(maxsize=2)  # maxsize 1 should suffice
     def xywh(self):
+        """Return the boxes in xywh format."""
         return ops.xyxy2xywh(self.xyxy)
 
     @property
     @lru_cache(maxsize=2)
     def xyxyn(self):
+        """Return the boxes in xyxy format normalized by original image size."""
         return self.xyxy / self.orig_shape[[1, 0, 1, 0]]
 
     @property
     @lru_cache(maxsize=2)
     def xywhn(self):
+        """Return the boxes in xywh format normalized by original image size."""
         return self.xywh / self.orig_shape[[1, 0, 1, 0]]
 
     def pandas(self):
+        """Convert the object to a pandas DataFrame (not yet implemented)."""
         LOGGER.info('results.pandas() method not yet implemented')
 
     @property
     def boxes(self):
+        """Return the raw bboxes tensor (deprecated)."""
         LOGGER.warning("WARNING ⚠️ 'Boxes.boxes' is deprecated. Use 'Boxes.data' instead.")
         return self.data
 
@@ -495,6 +443,7 @@ class Masks(BaseTensor):
     """
 
     def __init__(self, masks, orig_shape) -> None:
+        """Initialize the Masks class."""
         if masks.ndim == 2:
             masks = masks[None, :]
         super().__init__(masks, orig_shape)
@@ -502,7 +451,7 @@ class Masks(BaseTensor):
     @property
     @lru_cache(maxsize=1)
     def segments(self):
-        # Segments-deprecated (normalized)
+        """Return segments (deprecated; normalized)."""
         LOGGER.warning("WARNING ⚠️ 'Masks.segments' is deprecated. Use 'Masks.xyn' for segments (normalized) and "
                        "'Masks.xy' for segments (pixels) instead.")
         return self.xyn
@@ -510,7 +459,7 @@ class Masks(BaseTensor):
     @property
     @lru_cache(maxsize=1)
     def xyn(self):
-        # Segments (normalized)
+        """Return segments (normalized)."""
         return [
             ops.scale_coords(self.data.shape[1:], x, self.orig_shape, normalize=True)
             for x in ops.masks2segments(self.data)]
@@ -518,12 +467,13 @@ class Masks(BaseTensor):
     @property
     @lru_cache(maxsize=1)
     def xy(self):
-        # Segments (pixels)
+        """Return segments (pixels)."""
         return [
             ops.scale_coords(self.data.shape[1:], x, self.orig_shape, normalize=False)
             for x in ops.masks2segments(self.data)]
 
     @property
     def masks(self):
+        """Return the raw masks tensor (deprecated)."""
         LOGGER.warning("WARNING ⚠️ 'Masks.masks' is deprecated. Use 'Masks.data' instead.")
         return self.data

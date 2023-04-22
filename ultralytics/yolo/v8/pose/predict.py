@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, GPL-3.0 license
+# Ultralytics YOLO 🚀, AGPL-3.0 license
 
 from ultralytics.yolo.engine.results import Results
 from ultralytics.yolo.utils import DEFAULT_CFG, ROOT, ops
@@ -8,6 +8,7 @@ from ultralytics.yolo.v8.detect.predict import DetectionPredictor
 class PosePredictor(DetectionPredictor):
 
     def postprocess(self, preds, img, orig_img):
+        """Return detection results for a given input image or list of images."""
         preds = ops.non_max_suppression(preds,
                                         self.args.conf,
                                         self.args.iou,
@@ -35,13 +36,12 @@ class PosePredictor(DetectionPredictor):
 
 
 def predict(cfg=DEFAULT_CFG, use_python=False):
-    # model = cfg.model or 'yolov8n-pose.pt'
-    # source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
-    #     else 'https://ultralytics.com/images/bus.jpg'
-    model = "/Users/yuhang/runs/pose/train6/weights/best.pt"
-
-    source = '0'
-    args = dict(model=model, source=source)
+    """Runs YOLO to predict objects in an image or video."""
+    model = cfg.model or 'yolov8n-pose.pt'
+    source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
+        else 'https://ultralytics.com/images/bus.jpg'
+    source_pth = '/home/zhizhuo/ADDdisk/Create Machine Lab/datasets/coco8-pose/images/train'
+    args = dict(model=model, source=source_pth)
     if use_python:
         from ultralytics import YOLO
         YOLO(model)(**args)
