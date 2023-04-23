@@ -328,8 +328,6 @@ def predict(cfg=DEFAULT_CFG, use_python=False, data_path=None, model_path=None):
             pred_result.append(result)
             print('this is j', j)
             print('this is i', i)
-            if i == 4:
-                print('aaaa')
             # tar_xylw = np.copy(target[j, 1:5])
             # tar_keypoints = np.copy((target[j, 5:]).reshape(-1, 3)[:, :2])
             # # tar_keypoints = (target[j, 5:])
@@ -366,7 +364,7 @@ def predict(cfg=DEFAULT_CFG, use_python=False, data_path=None, model_path=None):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
-        cv2.imwrite(source_pth + 'img_%s_pred.png' % int(i), origin_img)
+        cv2.imwrite(source_pth + 'pred/img_%s_pred.png' % int(i), origin_img)
 
     print('this is key point')
 
