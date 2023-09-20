@@ -70,6 +70,9 @@ class KeypointLoss(nn.Module):
         """Calculates keypoint loss factor and Euclidean distance loss for predicted and actual keypoints."""
         d = (pred_kpts[..., 0] - gt_kpts[..., 0]) ** 2 + (pred_kpts[..., 1] - gt_kpts[..., 1]) ** 2
         kpt_loss_factor = (torch.sum(kpt_mask != 0) + torch.sum(kpt_mask == 0)) / (torch.sum(kpt_mask != 0) + 1e-9)
+
+        # here is how to calculate the keypoint loss!!!!!!!!!
+
         # e = d / (2 * (area * self.sigmas) ** 2 + 1e-9)  # from formula
         e = d / (2 * self.sigmas) ** 2 / (area + 1e-9) / 2  # from cocoeval
         return kpt_loss_factor * ((1 - torch.exp(-e)) * kpt_mask).mean()

@@ -38,10 +38,11 @@ class PosePredictor(DetectionPredictor):
 def predict(cfg=DEFAULT_CFG, use_python=False):
     """Runs YOLO to predict objects in an image or video."""
     model = cfg.model or 'yolov8n-pose.pt'
+    # model = '/home/zhizhuo/ADDdisk/Create Machine Lab/YOLOv8/runs/pose/train2/weights/best.pt'
     source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
         else 'https://ultralytics.com/images/bus.jpg'
-    source_pth = '/home/zhizhuo/ADDdisk/Create Machine Lab/datasets/coco8-pose/images/train'
-    args = dict(model=model, source=source_pth)
+    # source = '/home/zhizhuo/ADDdisk/Create Machine Lab/datasets/coco8-pose/images/train'
+    args = dict(model=model, source=source)
     if use_python:
         from ultralytics import YOLO
         YOLO(model)(**args)

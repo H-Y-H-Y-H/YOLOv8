@@ -153,13 +153,11 @@ class SegLoss(Loss):
         return (crop_mask(loss, xyxy).mean(dim=(1, 2)) / area).mean()
 
 
-def train(cfg=DEFAULT_CFG, use_python=False):
+def train(cfg=DEFAULT_CFG, use_python=True):
     """Train a YOLO segmentation model based on passed arguments."""
     model = cfg.model or 'yolov8n-seg.pt'
-    data = cfg.data or 'coco128-seg.yaml'  # or yolo.ClassificationDataset("mnist")
-    device = cfg.device if cfg.device is not None else ''
 
-    args = dict(model=model, data=data, device=device)
+    args = dict(model=model, data='knolling-seg.yaml', epochs=100, imgsz=640, patience=300, name='train_seg_820')
     if use_python:
         from ultralytics import YOLO
         YOLO(model).train(**args)

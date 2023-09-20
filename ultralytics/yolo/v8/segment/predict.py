@@ -42,10 +42,8 @@ class SegmentationPredictor(DetectionPredictor):
 
 def predict(cfg=DEFAULT_CFG, use_python=False):
     """Runs YOLO object detection on an image or video source."""
-    model = cfg.model or 'yolov8n-seg.pt'
-    source = cfg.source if cfg.source is not None else ROOT / 'assets' if (ROOT / 'assets').exists() \
-        else 'https://ultralytics.com/images/bus.jpg'
-
+    model = '/home/zhizhuo/Creative_Machines_Lab/Knolling_bot_2/820_pile_seg/weights/best.pt'
+    source = '/home/zhizhuo/Creative_Machines_Lab/knolling_dataset/yolo_segmentation_820/images/val/'
     args = dict(model=model, source=source)
     if use_python:
         from ultralytics import YOLO
