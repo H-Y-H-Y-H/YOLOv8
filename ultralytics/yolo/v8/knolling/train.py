@@ -162,11 +162,11 @@ class PoseLoss(Loss):
 
 def train(cfg=DEFAULT_CFG, use_python=False):
     """Train the YOLO model on the given data and device."""
-    # model = '../../../../../Knolling_bot_2/models/627_pile_pose/weights/best.pt'
-    model = cfg.model or 'yolov8n-pose.yaml'
+    model = '../../../../../Knolling_bot_2/models/919_grasp/weights/best.pt'
+    # model = cfg.model or 'yolov8n-pose.yaml'
     device = cfg.device if cfg.device is not None else ''
 
-    args = dict(model=model, data='knolling_grasp.yaml', epochs=50, imgsz=640, patience=300, name='919_grasp')
+    args = dict(model=model, data='knolling_grasp.yaml', epochs=200, imgsz=640, patience=300, name='924_grasp')
     if use_python:
         from ultralytics import YOLO
         YOLO(model).train(**args)
